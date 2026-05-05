@@ -48,17 +48,16 @@ export default function FeedbackForm({ onSubmit }) {
     if (formData.firstVisit === '') return 'Please select if this is your first visit'
     if (formData.satisfaction === null) return 'Please rate your satisfaction'
 
-    // 4-5 stars: Validate ONLY "Liked Most" (not improvement)
+    // 4-5 stars: Validate BOTH "Liked Most" AND "Improvement"
     if ([4, 5].includes(formData.satisfaction)) {
-      if (!formData.likedMost) return 'Please select what you liked most'
-      if (formData.likedMost === 'Other' && !formData.likedMostOther.trim()) return 'Please specify what you liked most'
-    }
-    // 3 stars: Validate BOTH "Liked Most" AND "Improvement Area"
-    else if (formData.satisfaction === 3) {
       if (!formData.likedMost) return 'Please select what you liked most'
       if (formData.likedMost === 'Other' && !formData.likedMostOther.trim()) return 'Please specify what you liked most'
       if (!formData.improvement) return 'Please select an improvement area'
       if (formData.improvement === 'Other' && !formData.improvementOther.trim()) return 'Please specify improvement'
+    }
+    // 3 stars: Validate "Neutral Suggestions"
+    else if (formData.satisfaction === 3) {
+      if (!formData.neutralSuggestions.trim()) return 'Please share your suggestions'
     }
     // 1-2 stars: Validate "Concerns/Suggestions"
     else if ([1, 2].includes(formData.satisfaction)) {
@@ -276,7 +275,7 @@ export default function FeedbackForm({ onSubmit }) {
                     key={rating}
                     type="button"
                     onClick={() => handleInputChange('satisfaction', rating)}
-                    className={`w-14 h-14 rounded-full font-bold text-xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center border-2 ${
+                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full font-bold text-lg sm:text-xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center border-2 flex-shrink-0 ${
                       formData.satisfaction === rating
                         ? 'bg-primary text-white border-primary shadow-lg shadow-primary/30'
                         : 'bg-white text-gray-500 border-gray-200 hover:border-primary/50 hover:text-primary hover:shadow-md'
