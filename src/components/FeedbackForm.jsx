@@ -122,21 +122,21 @@ export default function FeedbackForm({ onSubmit }) {
         {/* Premium Header Card */}
         <div className="bg-gradient-to-br from-white via-gray-50 to-white rounded-t-3xl p-8 shadow-premium backdrop-blur-md border border-white/30">
           {/* Logo Section */}
-          <div className="flex items-center justify-center gap-12 mb-6">
+          <div className="flex items-center justify-center gap-4 sm:gap-12 mb-6">
             {/* American Hairline Logo */}
             <div className="flex-1 flex justify-center transform hover:scale-105 transition-transform duration-300">
               <img
                 src={ahlLogo}
                 alt="American Hairline"
-                className="h-20 object-contain drop-shadow-lg"
+                className="h-24 sm:h-28 md:h-32 object-contain drop-shadow-lg"
               />
             </div>
 
             {/* Premium Divider */}
             <div className="flex flex-col items-center gap-2">
-              <div className="w-0.5 h-16 bg-gradient-to-b from-transparent via-primary to-transparent"></div>
-              <span className="text-xs font-semibold text-primary">OR</span>
-              <div className="w-0.5 h-16 bg-gradient-to-b from-transparent via-primary to-transparent"></div>
+              <div className="w-0.5 h-12 sm:h-16 md:h-20 bg-gradient-to-b from-transparent via-primary to-transparent"></div>
+              <span className="text-[10px] sm:text-xs font-semibold text-primary">OR</span>
+              <div className="w-0.5 h-12 sm:h-16 md:h-20 bg-gradient-to-b from-transparent via-primary to-transparent"></div>
             </div>
 
             {/* Alchemane Logo */}
@@ -144,7 +144,7 @@ export default function FeedbackForm({ onSubmit }) {
               <img
                 src={alchemaneLogo}
                 alt="Alchemane"
-                className="h-20 object-contain drop-shadow-lg"
+                className="h-24 sm:h-28 md:h-32 object-contain drop-shadow-lg"
               />
             </div>
           </div>
