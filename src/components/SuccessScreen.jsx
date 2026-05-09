@@ -28,12 +28,22 @@ export default function SuccessScreen({ data, onReset }) {
     }
   }, [isUnhappy, isRedirecting])
 
+  const GOOGLE_REVIEW_PLACE_IDS = {
+    male: 'ChIJswL3q3XH5zsRwkP0vJlpfy4',
+    female: 'ChIltT3szfkJEpDBbLgLDa4MhR2Q0mtLszYPjRO1pyVJ9SE78V2snQQZQHWM778JVUpc',
+  }
+
   const getGoogleReviewLink = () => {
-    if (data.gender === 'male') {
-      return 'https://www.google.com/search?gs_ssp=eJzj4tVP1zc0zDBPSc6pyEkyYLRSNagwTko1TzY3N01MSjM3MEoytjKoMEo1TzOztLRMSk4zMTFONvISTMxNLcpMTsxTyEjMLMrJzEsFABdAFnY&q=american+hairline&oq=amricna+hair&gs_lcrp=EgZjaHJvbWUqEggBEC4YDRivARjHARiABBiOBTIGCAAQRRg5MhIIARAuGA0YrwEYxwEYgAQYjgUyCQgCEAAYDRiABDIJCAMQABgNGIAEMgkIBBAuGA0YgAQyCQgFEAAYDRiABDIJCAYQABgNGIAEMgkIBxAAGA0YgAQyCQgIEAAYDRiABNIBCDU5NTJqMGo3qAIAsAIA&sourceid=chrome&ie=UTF-8#lrd=0x3be7c775abf702b3:0x2e7f6999bcf443c2,3,,,,'
-    } else {
-      return 'https://www.google.com/search?q=alchemane&oq=alchem&gs_lcrp=EgZjaHJvbWUqDwgAECMYJxjjAhiABBiKBTIPCAAQIxgnGOMCGIAEGIoFMhUIARAuGCcYrwEYxwEYgAQYigUYjgUyDwgCEC4YQxixAxiABBiKBTIPCAMQLhhDGLEDGIAEGIoFMgYIBBBFGDkyDQgFEC4YrwEYxwEYgAQyDAgGEAAYQxiABBiKBTINCAcQABiSAxiABBiKBTINCAgQABiSAxiABBiKBTIHCAkQABiPAtIBCDE0NzZqMGo3qAIAsAIA&sourceid=chrome&ie=UTF-8#lrd=0x3be7ced2ae1b4cb5:0xb6c46033f416e128,3,,,,'
+    const placeId = data.gender === 'male' ? GOOGLE_REVIEW_PLACE_IDS.male : GOOGLE_REVIEW_PLACE_IDS.female
+    const placeQuery = data.gender === 'male' ? 'american+hairline+salon' : 'alchemane+salon'
+
+    // Use the direct review URL when available
+    if (placeId) {
+      return `https://search.google.com/local/writereview?placeid=${placeId}`
     }
+
+    // Fallback: open the location on Google Maps if the direct review link is not configured
+    return `https://www.google.com/maps/search/?api=1&query=${placeQuery}`
   }
 
   const complaintLink = 'https://script.google.com/a/macros/americanhairline.com/s/AKfycbyz99eOjBFgTcO6hckInwCepSvepOob_XBIpS4AKycnGoAw3D_-mO25kpcwZ--EnMf7/exec?page=customer&mode=complaint'
