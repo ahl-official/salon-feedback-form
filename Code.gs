@@ -6,8 +6,27 @@
 // Main doPost handler - accepts JSON from the React app
 function doPost(e) {
   try {
+    Logger.log('=== New Submission Received ===');
+    Logger.log('Timestamp:', new Date().toISOString());
+    
     // Parse the JSON payload from the request
     const payload = JSON.parse(e.postData.contents);
+    Logger.log('Payload parsed successfully');
+
+    // Basic input validation
+    if (!payload.name || !payload.contact || !payload.gender || !payload.provider) {
+      throw new Error('Missing required fields: name, contact, gender, provider');
+    }
+
+    if (!payload.timestamp || !payload.satisfactionScore) {
+      throw new Error('Missing required fields: timestamp, satisfactionScore');
+    }
+
+    if (payload.satisfactionScore < 1 || payload.satisfactionScore > 5) {
+      throw new Error('Invalid satisfaction score. Must be between 1-5');
+    }
+
+    Logger.log('Validation passed for:', payload.name);
 
     // Get the active spreadsheet
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -17,27 +36,44 @@ function doPost(e) {
     if (!sheet) {
       sheet = ss.insertSheet('FeedbackData');
       createHeaders(sheet);
+      Logger.log('Created new FeedbackData sheet');
     }
 
-    // Append the data to the sheet (matching column order in Google Sheet)
-    // Logic: Different fields for different satisfaction levels
-    // 4-5 Stars: Liked Most + Improvement Area
-    // 3 Stars: Neutral Suggestions
-    // 1-2 Stars: Concerns/Suggestions
+    // Prepare data based on satisfaction level for clearer logic
+    let likedMost = ''
+    let improvementArea = ''
+    let neutralSuggestions = ''
+    let concerns = ''
+
+    if (payload.satisfactionScore >= 4) {
+      // 4-5 stars: Liked Most + Improvement Area
+      likedMost = payload.likedMost || ''
+      improvementArea = payload.improvement || ''
+    } else if (payload.satisfactionScore === 3) {
+      // 3 stars: Neutral Suggestions
+      neutralSuggestions = payload.neutralSuggestions || ''
+    } else if (payload.satisfactionScore <= 2) {
+      // 1-2 stars: Concerns/Suggestions
+      concerns = payload.unhappyConcerns || ''
+    }
+
+    // Create the row data array
     const newRow = [
-      payload.timestamp,
-      payload.provider,
-      payload.name,
-      payload.contact,
-      payload.gender,
-      payload.satisfactionScore,
-      (payload.satisfactionScore >= 4) ? (payload.likedMost || '') : '',  // Column G: Liked Most (4-5 stars)
-      (payload.satisfactionScore >= 4) ? (payload.improvement || '') : (payload.satisfactionScore === 3 ? (payload.neutralSuggestions || '') : ''),  // Column H: Improvement Area / Neutral Suggestions
-      payload.firstVisit,  // Column I: First Visit (always)
-      (payload.satisfactionScore <= 2) ? (payload.unhappyConcerns || '') : '',  // Column J: Concerns/Suggestions (1-2 stars)
+      payload.timestamp,           // Column A: Timestamp
+      payload.provider,            // Column B: Service Provider
+      payload.name,                // Column C: Client Name
+      payload.contact,             // Column D: Contact No
+      payload.gender,              // Column E: Gender
+      payload.satisfactionScore,   // Column F: Satisfaction (1-5)
+      likedMost,                   // Column G: Liked Most (4-5 stars only)
+      improvementArea || neutralSuggestions,  // Column H: Improvement Area / Neutral Suggestions
+      payload.firstVisit,          // Column I: First Visit
+      concerns,                    // Column J: Concerns/Suggestions (1-2 stars only)
     ];
 
     sheet.appendRow(newRow);
+    Logger.log('✅ Data appended successfully');
+    Logger.log('Total rows in sheet:', sheet.getLastRow());
 
     // Return success response with proper CORS headers
     return ContentService
@@ -45,6 +81,7 @@ function doPost(e) {
         success: true,
         message: 'Feedback submitted successfully',
         timestamp: payload.timestamp,
+        rowNumber: sheet.getLastRow(),
       }))
       .setMimeType(ContentService.MimeType.JSON)
       .addHeader('Access-Control-Allow-Origin', '*')
@@ -52,8 +89,11 @@ function doPost(e) {
       .addHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   } catch (error) {
-    // Log the error
-    Logger.log('Error in doPost: ' + error);
+    // Log the error with details
+    Logger.log('❌ Error in doPost:');
+    Logger.log('Error message:', error.toString());
+    Logger.log('Error line:', error.lineNumber);
+    Logger.log('Stack trace:', error.stack);
 
     // Return error response
     return ContentService
@@ -61,6 +101,7 @@ function doPost(e) {
         success: false,
         message: 'Error processing feedback',
         error: error.toString(),
+        timestamp: new Date().toISOString(),
       }))
       .setMimeType(ContentService.MimeType.JSON)
       .addHeader('Access-Control-Allow-Origin', '*')

@@ -1,70 +1,10 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function SuccessScreen({ data, onReset }) {
   const [isRedirecting, setIsRedirecting] = useState(false)
-  const messageSentRef = useRef(false)
   const isSatisfied = data.satisfaction >= 4
   const isNeutral = data.satisfaction === 3
   const isUnhappy = data.satisfaction <= 2
-
-  // Send WhatsApp message via WAHA
-  const sendWhatsAppMessage = async (contactNo) => {
-    try {
-      // Check if contact number exists
-      if (!contactNo) {
-        console.error('❌ Contact number is missing or undefined')
-        return
-      }
-
-      console.log('📱 Received contact number:', contactNo, typeof contactNo)
-      
-      // Format phone number: add country code if not present and remove other non-digits
-      let cleanPhone = String(contactNo).replace(/\D/g, '')
-      
-      console.log('📱 Cleaned phone:', cleanPhone)
-      
-      // If phone number doesn't start with country code, add +91 (India)
-      if (cleanPhone.length === 10) {
-        cleanPhone = '91' + cleanPhone
-      }
-      
-      const wahaPhoneId = `${cleanPhone}@c.us`
-      
-      console.log('📱 Sending WhatsApp to:', wahaPhoneId)
-      console.log('📱 Using endpoint: https://waha.amankhan.space/api/sendText')
-      
-      const brandName = data.gender === 'male' ? 'American Hairline' : 'Alchemane'
-      const professionalMessage = `*${brandName} Support* 🌟\n\nHi ${data.name || 'there'},\n\nWe sincerely apologize that your recent experience did not meet your expectations. We have raised a priority ticket for your concerns.\n\nOur senior support team will review your feedback and call you within *24 hours* to resolve this matter to your satisfaction.\n\nThank you for your valuable feedback. 🙏`
-      
-      const response = await fetch('https://waha.amankhan.space/api/sendText', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Api-Key': import.meta.env.VITE_WAHA_API_KEY || 'Americanhairline@123'
-        },
-        body: JSON.stringify({
-          chatId: wahaPhoneId,
-          reply_to: null,
-          text: professionalMessage,
-          linkPreview: true,
-          linkPreviewHighQuality: false,
-          session: import.meta.env.VITE_WAHA_SESSION || 'ahlaiteam'
-        })
-      })
-
-      const responseText = await response.text()
-      console.log('WhatsApp API Response Status:', response.status)
-      console.log('WhatsApp API Response:', responseText)
-
-      if (response.ok) {
-        console.log('✅ WhatsApp message sent successfully')
-      } else {
-        console.error('❌ Failed to send WhatsApp message. Status:', response.status, 'Response:', responseText)
-      }
-    } catch (error) {
-      console.error('❌ Error sending WhatsApp:', error.message, error)
-    }
-  }
 
   // Auto-redirect for 4-5 stars (satisfied customers)
   useEffect(() => {
@@ -72,23 +12,18 @@ export default function SuccessScreen({ data, onReset }) {
       const timer = setTimeout(() => {
         setIsRedirecting(true)
         window.location.href = getGoogleReviewLink()
-      }, 3000)
+      }, 5000)
       return () => clearTimeout(timer)
     }
   }, [isSatisfied, isRedirecting])
 
-  // Auto-redirect for 1-2 stars (unhappy customers) - send WhatsApp first
+  // Auto-redirect for 1-2 stars (unhappy customers)
   useEffect(() => {
-    if (isUnhappy && !isRedirecting && !messageSentRef.current) {
-      messageSentRef.current = true
-      // Send WhatsApp message immediately
-      sendWhatsAppMessage(data.contact)
-      
-      // Redirect after 2 seconds
+    if (isUnhappy && !isRedirecting) {
       const timer = setTimeout(() => {
         setIsRedirecting(true)
         window.location.href = complaintLink
-      }, 2000)
+      }, 5000)
       return () => clearTimeout(timer)
     }
   }, [isUnhappy, isRedirecting])
@@ -137,7 +72,7 @@ export default function SuccessScreen({ data, onReset }) {
                 Your kind words motivate us to keep delivering excellence.
               </p>
               <p className="text-base text-gray-500 mb-12">
-                We're redirecting you to leave a Google review...
+                We're redirecting you to leave a Google review in 5 seconds...
               </p>
               <div className="space-y-4">
                 <a
@@ -167,13 +102,12 @@ export default function SuccessScreen({ data, onReset }) {
             </>
           ) : (
             <>
-              <h1 className="text-5xl font-bold text-navy mb-4">We're Sorry to Hear That</h1>
-              <p className="text-xl text-gray-600 mb-2">Your ticket has been raised.</p>
-              <p className="text-xl text-gray-600 mb-8">You will get a call within 24 hours.</p>
+              <h1 className="text-5xl font-bold text-navy mb-4">We Value Your Feedback</h1>
+              <p className="text-xl text-gray-600 mb-2">Your concern has been escalated to our premium support team.</p>
+              <p className="text-xl text-gray-600 mb-8">Our senior management will personally review your experience and contact you within 24 hours to ensure complete satisfaction.</p>
               <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-blue-500 p-6 mb-12 text-left rounded-lg shadow-hover">
                 <p className="text-gray-700 text-base font-medium">
-                  ✓ WhatsApp notification sent to your phone<br/>
-                  ✓ Redirecting to complaint form in 2 seconds...
+                  ✓ Redirecting to detailed complaint form in 5 seconds...
                 </p>
               </div>
               <div className="space-y-4">

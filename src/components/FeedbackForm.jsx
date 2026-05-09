@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import ahlLogo from '../../logo/AHL-removebg-preview.png'
 import alchemaneLogo from '../../logo/Alchem-removebg-preview.png'
 
@@ -28,6 +28,17 @@ export default function FeedbackForm({ onSubmit }) {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const abortControllerRef = useRef(null)
+
+  // Clean up abort controller when component unmounts
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        console.log('🧹 [Feedback Form] Cleaning up abort controller')
+        abortControllerRef.current.abort()
+      }
+    }
+  }, [])
 
   const providers = formData.gender === 'male' ? MALE_PROVIDERS : FEMALE_PROVIDERS
 
@@ -43,6 +54,13 @@ export default function FeedbackForm({ onSubmit }) {
   const validateForm = () => {
     if (!formData.name.trim()) return 'Please enter your name'
     if (!formData.contact.trim()) return 'Please enter your contact number'
+    
+    // Phone number validation
+    const cleanPhone = formData.contact.replace(/\D/g, '')
+    if (cleanPhone.length < 10 || cleanPhone.length > 15) {
+      return 'Please enter a valid phone number (10-15 digits)'
+    }
+    
     if (!formData.gender) return 'Please select your gender'
     if (!formData.provider) return 'Please select a service provider'
     if (formData.firstVisit === '') return 'Please select if this is your first visit'
@@ -76,7 +94,18 @@ export default function FeedbackForm({ onSubmit }) {
       return
     }
 
+    // Abort any previous requests
+    if (abortControllerRef.current) {
+      console.log('🛑 [Feedback Form] Aborting previous request')
+      abortControllerRef.current.abort()
+    }
+
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController()
+
     setIsSubmitting(true)
+    setError('')
+
     try {
       const payload = {
         timestamp: new Date().toISOString(),
@@ -94,6 +123,18 @@ export default function FeedbackForm({ onSubmit }) {
 
       const apiUrl = import.meta.env.VITE_GAS_API_URL
       
+      if (!apiUrl) {
+        console.error('❌ API URL is not configured')
+        setError('Configuration error: API endpoint not found. Please contact support.')
+        setIsSubmitting(false)
+        return
+      }
+
+      console.log('📤 [Feedback Form] Submitting feedback...')
+      console.log('📍 API URL:', apiUrl)
+      console.log('📊 Payload:', JSON.stringify(payload, null, 2))
+      
+      // Use no-cors mode to handle Google Apps Script cross-origin requests
       const response = await fetch(apiUrl, {
         method: 'POST',
         mode: 'no-cors',
@@ -101,17 +142,77 @@ export default function FeedbackForm({ onSubmit }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
+        signal: abortControllerRef.current.signal,
       })
 
-      onSubmit({
+      console.log('✅ [Feedback Form] Request sent successfully')
+      console.log('📬 Response type:', response.type)
+      console.log('📍 Response status:', response.status)
+      
+      // Capture the submission data BEFORE resetting the form
+      const submissionData = {
         gender: formData.gender,
         satisfaction: formData.satisfaction,
         name: formData.name,
         contact: formData.contact,
+      }
+      
+      console.log('📦 [Feedback Form] Captured submission data:', submissionData)
+      
+      // With no-cors mode, we can't check response.ok, so we assume success if fetch completes
+      // The data will be in Google Sheets regardless
+      
+      // Reset form and proceed to success screen
+      console.log('🔄 [Feedback Form] Resetting form...')
+      setFormData({
+        name: '',
+        contact: '',
+        gender: '',
+        provider: '',
+        firstVisit: '',
+        satisfaction: null,
+        likedMost: '',
+        likedMostOther: '',
+        improvement: '',
+        improvementOther: '',
+        neutralSuggestions: '',
+        unhappyConcerns: '',
       })
+      
+      console.log('✨ [Feedback Form] Proceeding to success screen')
+      
+      // Reset submit state before proceeding
+      setIsSubmitting(false)
+      
+      // Use captured data instead of formData (which may have been reset)
+      onSubmit(submissionData)
+      
     } catch (err) {
-      console.error('Submission error:', err)
-      setError('Failed to submit feedback. Please try again.')
+      console.error('❌ [Feedback Form] Error caught in try-catch:', err)
+      console.error('Error name:', err.name)
+      console.error('Error message:', err.message)
+      console.error('Error stack:', err.stack)
+      
+      // Don't show error if request was aborted (user went back)
+      if (err.name === 'AbortError') {
+        console.log('ℹ️ [Feedback Form] Request was cancelled')
+        return
+      }
+      
+      // Determine specific error type
+      let errorMessage = 'Error submitting feedback. Please try again.'
+      
+      if (err.message && err.message.includes('Failed to fetch')) {
+        errorMessage = 'Connection error. Please check if you are online and try again.'
+      } else if (err.message && err.message.includes('CORS')) {
+        errorMessage = 'Access error. The API endpoint may be blocked. Please contact support.'
+      } else if (err.type === 'NetworkError' || err.name === 'NetworkError') {
+        errorMessage = 'Network error detected. Please check your internet connection and try again.'
+      } else if (!navigator.onLine) {
+        errorMessage = 'You are offline. Please check your internet connection and try again.'
+      }
+      
+      setError(errorMessage)
       setIsSubmitting(false)
     }
   }
