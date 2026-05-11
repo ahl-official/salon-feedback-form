@@ -46,7 +46,7 @@ export default function SuccessScreen({ data, onReset }) {
     return `https://www.google.com/maps/search/?api=1&query=${placeQuery}`
   }
 
-  const complaintLink = 'https://script.google.com/a/macros/americanhairline.com/s/AKfycbyz99eOjBFgTcO6hckInwCepSvepOob_XBIpS4AKycnGoAw3D_-mO25kpcwZ--EnMf7/exec?page=customer&mode=complaint'
+  const complaintLink = 'https://ahl-complaint-form.vercel.app/'
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
