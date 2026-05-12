@@ -46,7 +46,7 @@ export default function SuccessScreen({ data, onReset }) {
     return `https://www.google.com/maps/search/?api=1&query=${placeQuery}`
   }
 
-  const complaintLink = 'https://ahl-complaint-form.vercel.app/'
+  const complaintLink = 'https://ahl-complaint-form.vercel.app/#complaint'
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
